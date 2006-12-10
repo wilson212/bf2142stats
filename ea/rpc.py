@@ -151,7 +151,8 @@ class StatsWrapper:
                                     for format in modes[mode] ] )
             else:
                 results = self._format( data, fuzzy=True, **modes[mode])
-            return results
+            return [result for result in results # drop empty rows after fuzzy formatting
+                    if sum(map(int, filter(lambda x: x != '000', result.values())))]
         else:
             return self._format( data, **modes[mode])
 

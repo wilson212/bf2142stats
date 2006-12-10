@@ -7,10 +7,7 @@ Fully implemented wrappers so far:
   get_awards(pid)
   get_backend_info()
   player_search(nick)
-
-Partially:
-  player_info(mode):
-    'ovr', 'ply', 'titan', 'wrk', 'com' modes
+  player_info(mode)
 
 Remaining queries can be done with ea.rpc.RPC class, yielding some [almost] raw
 data from response.
