@@ -121,7 +121,15 @@ class RPC:
             return make_query
 
 class StatsWrapper:
-    """ Abstraction class, proxying functions to stat server's authenticated request. """
+    """ Abstraction class to enable pythonic access to stat server's data.
+
+    >>> stats = StatsWrapper()
+    >>> stats.player_search(nick='Butcher')
+    ... [{'nick': 'Butcher', 'pid': 81970228},
+         {'nick': 'Butcher-', 'pid': 81642192},
+         {'nick': 'Butcher.', 'pid': 83384064},
+         {'nick': 'Butcher_', 'pid': 83577042}]
+    """
     def __init__(self, pid=0, *args, **kwargs):
         """ Init stat fetcher.
         Provide pid here or in functions.

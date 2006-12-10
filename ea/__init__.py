@@ -3,6 +3,8 @@ Package for querying EA/IGN's stat server.
 
 B{Read the readme and beware of banning!}
 
+See the L{rpc.StatsWrapper} class first.
+
 Copyright © 2006 Alexander Bondarenko <wiz@aenor.ru>
 
 Licence
