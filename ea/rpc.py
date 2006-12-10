@@ -121,16 +121,35 @@ class StatsWrapper:
         return datetime.fromtimestamp(int(str))
 
     def get_awards(self, pid=0):
+        """ Gets a list of awards for a particular player.
+        """
         return self._format(
             self._rpc.make_query('getawardsinfo', pid=pid or self._rpc.pid),
             first=self._timestamp, when=self._timestamp, award=str, level=int)
 
     def get_backend_info(self):
+        """ Gets information used to update various files for the game.
+        At the moment it returns some pythonic code for the config file
+        used to determine awards and rank criteria.
+        """
         return self._format(
             make_query('getbackendinfo', authpid=0),
             config=str)
     
     def player_info(self, mode):
+        """ Gets player information.
+        mode (required) - the stats mode that takes one of the following parameters:
+
+            base (requires pToken) - general statistics
+            ovr - overview stats
+            ply - player stats
+            titan - titan mode stats
+            wrk - teamwork stats
+            com - leadership stats
+            wep - weapon stats
+            veh - vehicle stats
+            map - map stats
+        """
         modes = self.player_info_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
@@ -149,6 +168,27 @@ class StatsWrapper:
             return self._format( data, **modes[mode])
 
     def get_leader_board(self, pos, after, mode, **kwargs):
+        """ Gets the BF2142 leaderboard information
+        mode (required) - the general category in which to get the results. valid values for this are:
+            weapon (requires id) - ranks players by weapon.
+                                   there are 43 some odd different types of weapons.
+                                   setting the id parameter to a value between 0 - 27
+                                   (though more may possibly be pulled... that hasn't been tested)
+                                   will return a result for that weapon. not all weapons kill.
+            vehicle (requires id) - rank players based on a particular vehicle. the id parameter takes values 0 - 14
+            overallscore - rank players based on overall score
+            combatscore - rank players based on combat score
+            commanderscore - rank players on commander score
+            teamworkscore - rank players based on teamwork score
+            efficiency - rank players based on efficiency
+            risingstar - rank players based on the player who has progressed the most over some period of time?
+            supremecommander - shows "hall of fame" board and will display whoever has achieved the "supreme commander" rank
+        id (required by vehicle & weapon) - specifies a weapon or vehicle type.
+        ccFilter (optional) - filters result set by country (takes the 2 letter country code as its value)
+        buddiesFilter (optional) - filters results based on a list of buddy PID's.
+                                   ex: buddiesFilter=(81168298, 81242994, 81306093, 81465904)
+        dogTagFilter (optional) - filters the list to people you've knifed (set dogTagFilter=1 to enable this filter).
+        """
         modes = self.leader_board_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
@@ -159,6 +199,8 @@ class StatsWrapper:
             **modes[mode])
 
     def get_player_progress(self, mode, scale='game'):
+        """ Gets statistical progress data used to draw the graphs in game
+        """
         modes = self.player_progress_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
@@ -167,11 +209,20 @@ class StatsWrapper:
             **modes[mode])
 
     def get_unlocks_info(self, pid=0):
+        """ Gets a list of unlocked items.
+
+        first digit: Kit
+        second digit: Col of unlock tree 1 or 2
+        third digit: Order in unlock tree 1 to 4(highest)
+        """
         return self._format(
             self._rpc.make_query('getunlocksinfo', authpid=pid or self._rpc.pid),
             UnlockID=str)
 
     def player_search(self, nick):
+        """ Finds a players based on their nick.
+        Use '*' as wildcard.
+        """
         return self._format(
             self._rpc.make_query('playersearch', nick=nick),
             nick=str, pid=int)
@@ -180,9 +231,8 @@ class StatsWrapper:
         """ Precompile format dicts
         because they are different for each mode, containg '-'ses and not normalised.
         """
-
         # those should be grabbed directly from the game
-        WEAPONS = 31
+        WEAPONS = 43
         VEHICLES = 15
         MAPS = 9
         MAP_MODES = 2
