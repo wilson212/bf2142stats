@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ Battlefield 2142 Auth token encoder
 This is the python module package for creating auth tokens of EA/IGN's stat server.
 

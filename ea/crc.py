@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ CRC16-CCITT hash, part of Battlefield 2142 Auth token maker
 This is the python module package for computing CRC16-CCITT hash.
 
