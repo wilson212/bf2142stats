@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ Battlefield 2142 stats querier
 
 This is the python module package for querying EA's stat servers.
@@ -113,13 +115,15 @@ class StatsWrapper:
         self.__init_modes()
 
     def _have_data(self, dic, fields):
-        return len(dic.keys()) == len(filter( lambda f: f in dic, fields ))
+        return len(dic.keys()) <= len(filter( lambda f: f in dic, fields ))
 
-    def _format(self, data, **format):
+    def _format(self, data, fuzzy=False, **format):
         return [
-            dict([ ( key, fun(line[key]) )
+            dict([ ( key, fun(fuzzy and line.get(key, '000') or line[key] ))
                    for key, fun in format.items()])
-            for line in data if self._have_data(line, format.keys())]
+            for line in data
+            if self._have_data(line, format.keys()) or fuzzy
+            ]
 
     def _timestamp(self, str):
         return datetime.fromtimestamp(int(str))
@@ -138,9 +142,18 @@ class StatsWrapper:
         modes = self.player_info_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
-        return self._format(
-            self._rpc.make_query('getplayerinfo', mode=mode),
-            **modes[mode])
+        data = self._rpc.make_query('getplayerinfo', mode=mode)
+        if mode in ('wep', 'veh', 'map'): #those could not contain all the rows. thank you dice/ea!
+            if type(modes[mode]) is list:
+                # multiple line formats
+                results = reduce( lambda x,y:x+y,
+                                  [ self._format( data, fuzzy=True, **format )
+                                    for format in modes[mode] ] )
+            else:
+                results = self._format( data, fuzzy=True, **modes[mode])
+            return results
+        else:
+            return self._format( data, **modes[mode])
 
     def player_search(self, nick):
         return self._format(
@@ -148,6 +161,16 @@ class StatsWrapper:
             nick=str, pid=int)
 
     def __init_modes(self):
+        """ Precompile format dicts
+        because they are different for each mode, containg '-'ses and not normalised.
+        """
+
+        # those should be grabbed directly from the game
+        WEAPONS = 31
+        VEHICLES = 15
+        MAPS = 9
+        MAP_MODES = 2
+        
         self.player_info_modes = {
         'ovr': {'acdt': self._timestamp, 'brs': int, 'crpt': int,
                 'fe': int, 'fgm': int, 'fk': int, 'fm': int, 'fv': int, 'fw': int,
@@ -159,5 +182,36 @@ class StatsWrapper:
                  'klla': int, 'klls': int, 'klstrk': int, 'kpm': float, 'ktt-0': int,
                  'ktt-1': int, 'ktt-2': int, 'ktt-3': int, 'nick': str, 'ovaccu': float,
                  'pid': int, 'spm': float, 'suic': int, 'tid': int, 'toth': int, 'tots': int},
+        'titan':{'cts': int, 'nick': str, 'pid': int, 'tas': int, 'tcd': int, 'tcrd': int,
+                 'tdrps': int, 'tds': int, 'tgd': int, 'tgr': int, 'tid': int, 'trp': int,
+                 'ttp': int},
+        'wrk':  {'capa': int, 'cpt': int, 'cs': int, 'cts': int, 'dass': int, 'dcpt': int,
+                 'hls': int, 'nick': str, 'pid': int, 'resp': int, 'rps': int, 'rvs': int,
+                 'sasl': int, 'tac': int, 'talw': int, 'tasl': int, 'tasm': int, 'tdmg': int,
+                 'tid': int, 'tkls': int, 'tvdmg': int, 'twsc': int},
+        'com':  {'cs': int, 'csgpm-0': int, 'csgpm-1': int, 'kluav': int, 'nick': str,
+                 'pid': int, 'sasl': int, 'slbcn': int, 'slbspn': int, 'slpts': int,
+                 'sluav': int, 'tac': int, 'tasl': int, 'tid': int, 'wkls-27': int},
+        'wep': dict( # generate what awfull number of rows
+                     reduce(lambda x,y: x+y,
+                            [ [('%s-%d' % (key, n), val) for n in range(WEAPONS)]
+                              for key, val in
+                              { 'waccu': float, 'wdths': int, 'whts':int, 'wkdr':float,
+                                'wkls':int, 'wshts':int, 'wtp': int, 'wtpk': int,
+                              }.items()])),
+        'veh': dict( # generate what not-so-awfull-but-still-more-than-one number of rows
+                     reduce(lambda x,y: x+y,
+                            [ [('%s-%d' % (key, n), val) for n in range(VEHICLES)]
+                              for key, val in
+                              { 'vdstry': float, 'vdths': int, 'vkdr': float, 'vkls': int,
+                                'vrkls': int, 'vtp': int,
+                              }.items()])),
+        'map': [dict( # boring...
+                     reduce(lambda x,y: x+y,
+                            [ [('%s-%d-%d' % (key, mode, n), val) for n in range(MAPS)]
+                              for key, val in
+                              { 'mbr': int, 'mlos': int, 'msc': int, 'mtt': int, 'mwin': int,
+                              }.items()]))
+                for mode in range(MAP_MODES)],
         }
 

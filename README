@@ -9,7 +9,8 @@ Fully implemented wrappers so far:
   player_search(nick)
 
 Partially:
-  'ovr' and 'ply' modes of player_info(mode)
+  player_info(mode):
+    'ovr', 'ply', 'titan', 'wrk', 'com' modes
 
 Remaining queries can be done with ea.rpc.RPC class, yielding some [almost] raw
 data from response.
