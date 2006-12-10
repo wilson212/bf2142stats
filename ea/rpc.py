@@ -114,8 +114,8 @@ class StatsWrapper:
         self._rpc = RPC(*args, **kwargs)
         self.__init_modes()
 
-    def _have_data(self, dic, fields):
-        return len(dic.keys()) <= len(filter( lambda f: f in dic, fields ))
+    def _have_data(self, dic, fields, fuzzy=False):
+        return (not fuzzy and len(found) == len(fields)) or (fuzzy and len(found))
 
     def _format(self, data, fuzzy=False, **format):
         return [
@@ -155,6 +155,16 @@ class StatsWrapper:
                     if sum(map(int, filter(lambda x: x != '000', result.values())))]
         else:
             return self._format( data, **modes[mode])
+
+    def get_leader_board(self, pos, after, mode, **kwargs):
+        modes = self.leader_board_modes
+        if mode not in modes:
+            raise ValueError('Unknown mode: "%s"' % mode)
+        if mode in ('weapon', 'vehicle') and 'id' not in kwargs:
+            raise ValueError('"id" argument is required for mode "%s"' % mode)
+        return self._format(
+            self._rpc.make_query('getleaderboard', pos=pos, after=after, type=mode, **kwargs),
+            **modes[mode])
 
     def player_search(self, nick):
         return self._format(
@@ -216,3 +226,19 @@ class StatsWrapper:
                 for mode in range(MAP_MODES)],
         }
 
+        base = { 'Vet': int, 'countrycode': str, 'nick': str, 'pid': int,
+                       'pos': int, 'rank': int, 'playerrank': int} # 'dt': int
+        self.leader_board_modes = {
+            'overallscore':   dict(base, globalscore=int),
+            'combatscore':    dict(base, Accuracy=float, Deaths=int, Kills=int, kdr=float),
+            'risingstar':     dict(base, PercentChange=float),
+            'commanderscore': dict(base, coscore=int),
+            'teamworkscore':  dict(base, teamworkscore=int),
+            'efficiency':     dict(base, Efficiency=float),
+
+            'weapon':         dict(base, accuracy=float, deaths=int, kdr=float, kills=int),
+            'vehicle':        dict(base, roadkills=int,  deaths=int, kills=int),
+
+            'supremecommander': {'Date': self._timestamp, 'Times': int, 'Week': int,
+                                 'nick': str, 'rank': int, 'Vet': lambda x:x in ('True', 1, '1', True)},
+        }

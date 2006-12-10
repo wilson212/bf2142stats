@@ -8,6 +8,7 @@ Fully implemented wrappers so far:
   get_backend_info()
   player_search(nick)
   player_info(mode)
+  def get_leader_board(self, pos, after, mode, **kwargs)
 
 Remaining queries can be done with ea.rpc.RPC class, yielding some [almost] raw
 data from response.
