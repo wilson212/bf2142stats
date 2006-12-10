@@ -81,7 +81,14 @@ class Query:
         self.result = result
 
 class RPC:
-    """ Make auth token and query a server. """
+    """ Make auth token and query a server.
+
+    Any attribute what not in class will be converted to a authenticated request to a stat server.
+
+    C{rpc.getfoo(spam='eggs') -> http://stat.host.name/getfoo.aspx?auth=I{....}&spam=eggs}
+
+    B{Handle with care and RTFM!}
+    """
     def __init__(self, pid=0, host=STELLA):
         self.host = host
         self.pid = pid
@@ -91,10 +98,27 @@ class RPC:
         return make_auth(pid or self.pid or 0)
 
     def make_query(self, func, **kwargs):
-        """ Run a query against stat server. """
+        """ Run a query against stat server.
+
+        Pass the 'authpid' argument to override RPC-object's configured PID.
+        (must do so for some functions - consult a U{tech wiki <http://bf2tech.org/BF2142_Statistics>}.)
+        """
         apid = kwargs.get('authpid', self.pid)
         self.query = Query(self.host, func, **dict(kwargs, auth=self._make_auth(apid)))
         return self.query.execute()
+
+    def __getattr__(self, name):
+        """ Proxy all methods through _make_query
+
+        >>> rpc = RPC(12321)
+        >>> rpc.getawardsinfo()
+        """
+        if name in self.__dict__:
+            return self.__dict__[name]
+        else:
+            def make_query(**kwargs):
+                return self.make_query(name, **kwargs)
+            return make_query
 
 class StatsWrapper:
     """ Abstraction class, proxying functions to stat server's authenticated request. """
@@ -131,7 +155,7 @@ class StatsWrapper:
         """ Gets a list of awards for a particular player.
         """
         return self._format(
-            self._rpc.make_query('getawardsinfo', pid=pid or self._rpc.pid),
+            self._rpc.getawardsinfo(pid=pid or self._rpc.pid),
             first=self._timestamp, when=self._timestamp, award=str, level=int)
 
     def get_backend_info(self):
@@ -140,7 +164,7 @@ class StatsWrapper:
         used to determine awards and rank criteria.
         """
         return self._format(
-            make_query('getbackendinfo', authpid=0),
+            self._rpc.getbackendinfo(authpid=0),
             config=str)
     
     def player_info(self, mode):
@@ -160,7 +184,7 @@ class StatsWrapper:
         modes = self.player_info_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
-        data = self._rpc.make_query('getplayerinfo', mode=mode)
+        data = self._rpc.getplayerinfo(mode=mode)
         if mode in ('wep', 'veh', 'map'): #those could not contain all the rows. thank you dice/ea!
             if type(modes[mode]) is list:
                 # multiple line formats
@@ -208,7 +232,7 @@ class StatsWrapper:
         if mode in ('weapon', 'vehicle') and 'id' not in kwargs:
             raise ValueError('"id" argument is required for mode "%s"' % mode)
         return self._format(
-            self._rpc.make_query('getleaderboard', pos=pos, after=after, type=mode, **kwargs),
+            self._rpc.getleaderboard(pos=pos, after=after, type=mode, **kwargs),
             **modes[mode])
 
     def get_player_progress(self, mode, scale='game'):
@@ -217,7 +241,7 @@ class StatsWrapper:
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
         return self._format(
-            self._rpc.make_query('getleaderboard', mode=mode, scale=scale)
+            self._rpc.getleaderboard(mode=mode, scale=scale)
             **modes[mode])
 
     def get_unlocks_info(self, pid=0):
@@ -229,7 +253,7 @@ class StatsWrapper:
           3. Order in unlock tree 1 to 4(highest)
         """
         return self._format(
-            self._rpc.make_query('getunlocksinfo', authpid=pid or self._rpc.pid),
+            self._rpc.getunlocksinfo(authpid=pid or self._rpc.pid),
             UnlockID=str)
 
     def player_search(self, nick):
@@ -238,7 +262,7 @@ class StatsWrapper:
         Use '*' as wildcard.
         """
         return self._format(
-            self._rpc.make_query('playersearch', nick=nick),
+            self._rpc.playersearch(nick=nick),
             nick=str, pid=int)
 
     def __init_modes(self):
