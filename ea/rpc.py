@@ -97,12 +97,6 @@ class RPC:
         self.query = Query(self.host, func, **dict(kwargs, auth=self._make_auth(apid)))
         return self.query.execute()
 
-    def getleaderboard(self, pos, after, type, **kwargs):
-        return self.make_query('getleaderboard', pos=pos, after=after, type=type, **kwargs)
-
-    def getplayerinfo(self, mode, pToken=None):
-        return self.make_query('getplayerinfo', mode=mode)
-
     def getplayerprogress(self, mode, scale='game'):
         return self.make_query('getplayeprogress', mode=mode, scale=scale)
 
@@ -115,7 +109,8 @@ class StatsWrapper:
         self.__init_modes()
 
     def _have_data(self, dic, fields, fuzzy=False):
-        return (not fuzzy and len(found) == len(fields)) or (fuzzy and len(found))
+        found = len(filter( lambda f: f in dic, fields ))
+        return (not fuzzy and found == len(fields)) or (fuzzy and found)
 
     def _format(self, data, fuzzy=False, **format):
         return [
@@ -164,6 +159,14 @@ class StatsWrapper:
             raise ValueError('"id" argument is required for mode "%s"' % mode)
         return self._format(
             self._rpc.make_query('getleaderboard', pos=pos, after=after, type=mode, **kwargs),
+            **modes[mode])
+
+    def get_player_progress(self, mode, scale='game'):
+        modes = self.player_progress_modes
+        if mode not in modes:
+            raise ValueError('Unknown mode: "%s"' % mode)
+        return self._format(
+            self._rpc.make_query('getleaderboard', mode=mode, scale=scale)
             **modes[mode])
 
     def player_search(self, nick):
@@ -241,4 +244,18 @@ class StatsWrapper:
 
             'supremecommander': {'Date': self._timestamp, 'Times': int, 'Week': int,
                                  'nick': str, 'rank': int, 'Vet': lambda x:x in ('True', 1, '1', True)},
+        }
+
+        self.player_progress_modes = {
+            'point': {},
+            'score': {},
+            'ttp': {},
+            'kills': {},
+            'spm': {},
+            'role': {},
+            'flag': {},
+            'waccu': {},
+            'wl': {},
+            'twsc': {},
+            'sup': {},
         }
