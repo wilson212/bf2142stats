@@ -1,21 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """ Battlefield 2142 Auth token encoder
-This is the python module package for creating auth tokens of EA/IGN's stat server.
-
-Copyright © 2006 Alexander Bondarenko <wiz@aenor.ru>
-
-Licence:
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+This is the python module for creating auth tokens of EA/IGN's stat server.
 """
 
 from time import time
@@ -26,9 +12,11 @@ from crc import compute         as crc
 
 from base64 import b64encode
 def base64(s):
-        return b64encode(s,'[]').replace('=','_')
+    """ Base64-encode string and translate it for using as EA's auth token. """
+    return b64encode(s,'[]').replace('=','_')
 
 def make_auth(pid=0, as_server=False, timestamp=0):
+    """ Assemble authentication token. """
     data = ['\x00']*16
 
     if not timestamp:

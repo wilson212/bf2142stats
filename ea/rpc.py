@@ -2,23 +2,11 @@
 
 """ Battlefield 2142 stats querier
 
-This is the python module package for querying EA's stat servers.
+This is the python module for querying EA's stat servers.
 
-Please read the README
+B{Please read the README}
 
 Copyright © 2006 Alexander Bondarenko <wiz@aenor.ru>
-
-Licence:
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
 """
 
 STELLA = 'stella.prod.gamespy.com'
@@ -30,7 +18,14 @@ from httplib import HTTPConnection
 from datetime import datetime
 
 class Query:
+    """ Prepare arguments, request and process data from server."""
     def __init__(self, host, func, **kwargs):
+        """ Prepare a query.
+        host - host where to request data
+        func - name of a function on a server
+
+        Keyword args is what to send as query params.
+        """
         params = '&'.join(['%s=%s' % item for item in kwargs.items() ])
         self.request = '/%s.aspx?%s' % (func, params)
         self.connection = HTTPConnection(host)
@@ -42,8 +37,15 @@ class Query:
                      'request': self.request,
                      'response': self.response,
                      'result': self.result } )
+    def execute(self):
+        """ Connect to server and fetch response """
+        self.connection.request("GET", self.request)
+        self.response = self.connection.getresponse().read()
+        self._process_result()
+        return self.result
 
     def _process_result(self):
+        """ Parse server's response stored in self.response"""
         data = self.response
         if not data:
             return
@@ -78,38 +80,41 @@ class Query:
                 break
         self.result = result
 
-    def execute(self):
-        self.connection.request("GET", self.request)
-        self.response = self.connection.getresponse().read()
-        self._process_result()
-        return self.result
-
 class RPC:
+    """ Make auth token and query a server. """
     def __init__(self, pid=0, host=STELLA):
         self.host = host
         self.pid = pid
 
     def _make_auth(self, pid=None):
+        """ Make fresh auth token for an avaiable pid. """
         return make_auth(pid or self.pid or 0)
 
     def make_query(self, func, **kwargs):
+        """ Run a query against stat server. """
         apid = kwargs.get('authpid', self.pid)
         self.query = Query(self.host, func, **dict(kwargs, auth=self._make_auth(apid)))
         return self.query.execute()
 
-    def getplayerprogress(self, mode, scale='game'):
-        return self.make_query('getplayeprogress', mode=mode, scale=scale)
-
 class StatsWrapper:
-    def __init__(self, *args, **kwargs):
-        self._rpc = RPC(*args, **kwargs)
+    def __init__(self, pid=0, *args, **kwargs):
+        """ Init stat fetcher.
+        Provide pid here or in functions.
+        """
+        self._rpc = RPC(pid, *args, **kwargs)
         self.__init_modes()
 
     def _have_data(self, dic, fields, fuzzy=False):
+        """ Filter data with a list of keywords.
+        If fuzzy is not set, all keywords are required.
+        """
         found = len(filter( lambda f: f in dic, fields ))
         return (not fuzzy and found == len(fields)) or (fuzzy and found)
 
     def _format(self, data, fuzzy=False, **format):
+        """ Form dicts of data from matching rows of input.
+        Set fuzzy to turn filtering off.
+        """
         return [
             dict([ ( key, fun(fuzzy and line.get(key, '000') or line[key] ))
                    for key, fun in format.items()])
@@ -118,6 +123,7 @@ class StatsWrapper:
             ]
 
     def _timestamp(self, str):
+        """ Make a datetime object from string timestamp """
         return datetime.fromtimestamp(int(str))
 
     def get_awards(self, pid=0):
@@ -140,15 +146,15 @@ class StatsWrapper:
         """ Gets player information.
         mode (required) - the stats mode that takes one of the following parameters:
 
-            base (requires pToken) - general statistics
-            ovr - overview stats
-            ply - player stats
-            titan - titan mode stats
-            wrk - teamwork stats
-            com - leadership stats
-            wep - weapon stats
-            veh - vehicle stats
-            map - map stats
+          - base (requires pToken) - general statistics
+          - ovr - overview stats
+          - ply - player stats
+          - titan - titan mode stats
+          - wrk - teamwork stats
+          - com - leadership stats
+          - wep - weapon stats
+          - veh - vehicle stats
+          - map - map stats
         """
         modes = self.player_info_modes
         if mode not in modes:
@@ -169,25 +175,27 @@ class StatsWrapper:
 
     def get_leader_board(self, pos, after, mode, **kwargs):
         """ Gets the BF2142 leaderboard information
-        mode (required) - the general category in which to get the results. valid values for this are:
-            weapon (requires id) - ranks players by weapon.
+        Args:
+          - mode (required) - the general category in which to get the results. valid values for this are:
+            - weapon (requires id) - ranks players by weapon.
                                    there are 43 some odd different types of weapons.
                                    setting the id parameter to a value between 0 - 27
                                    (though more may possibly be pulled... that hasn't been tested)
                                    will return a result for that weapon. not all weapons kill.
-            vehicle (requires id) - rank players based on a particular vehicle. the id parameter takes values 0 - 14
-            overallscore - rank players based on overall score
-            combatscore - rank players based on combat score
-            commanderscore - rank players on commander score
-            teamworkscore - rank players based on teamwork score
-            efficiency - rank players based on efficiency
-            risingstar - rank players based on the player who has progressed the most over some period of time?
-            supremecommander - shows "hall of fame" board and will display whoever has achieved the "supreme commander" rank
-        id (required by vehicle & weapon) - specifies a weapon or vehicle type.
-        ccFilter (optional) - filters result set by country (takes the 2 letter country code as its value)
-        buddiesFilter (optional) - filters results based on a list of buddy PID's.
+            - vehicle (requires id) - rank players based on a particular vehicle. the id parameter takes values 0 - 14
+            - overallscore - rank players based on overall score
+            - combatscore - rank players based on combat score
+            - commanderscore - rank players on commander score
+            - teamworkscore - rank players based on teamwork score
+            - efficiency - rank players based on efficiency
+            - risingstar - rank players based on the player who has progressed the most over some period of time?
+            - supremecommander - shows "hall of fame" board and will display whoever has
+                                 achieved the "supreme commander" rank
+          - id (required by vehicle & weapon) - specifies a weapon or vehicle type.
+          - ccFilter (optional) - filters result set by country (takes the 2 letter country code as its value)
+          - buddiesFilter (optional) - filters results based on a list of buddy PID's.
                                    ex: buddiesFilter=(81168298, 81242994, 81306093, 81465904)
-        dogTagFilter (optional) - filters the list to people you've knifed (set dogTagFilter=1 to enable this filter).
+          - dogTagFilter (optional) - filters the list to people you've knifed (set dogTagFilter=1 to enable this filter).
         """
         modes = self.leader_board_modes
         if mode not in modes:

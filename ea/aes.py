@@ -1,38 +1,17 @@
 # -*- coding: utf-8 -*-
 
 """ Battlefield 2142 Auth token encoder
-This is the python module package for creating auth tokens of EA/IGN's stat server.
-
-Copyright © 2006 Alexander Bondarenko <wiz@aenor.ru>
-
-Licence:
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+This is the python module for creating auth tokens of EA/IGN's stat server.
 """
-
-try:
-    import psyco
-    psyco.full()
-except:
-    pass
-
-from base64 import b64encode as base64
 
 ### some mimic functions to deal with Tubar's table and functions
 
 def xorBYTE(a,b):
+    """ Apply XOR to two char args """
     return chr( ord(a) ^ ord(b) )
 
 def map_xor(*args):
-    """ char-by-char XOR of argument strings
+    """ Char-by-char XOR of argument strings
     map-version: looks like it is a bit quickier
     """
     return ''.join(
@@ -54,12 +33,23 @@ xor = map_xor
 #############################################################
 
 def getDWORD(s):
+    """ Fetch four first bytes from string """
     return ''.join((s[3],s[2],s[1],s[0]))
 
 def str2hex(s):
+    """ Translate 'binary' string to it's hex-stream representation
+
+    >>> hex2str('Mommy\x00')
+    '4D6F6D6D7900'
+    """
     return ''.join([hex(ord(char))[2:].rjust(2,'0') for char in s]).upper()
 
 def hex2str(s):
+    """ Translate hex-stream from string to character data
+
+    >>> str2hex('AA56BB')
+    '\xaa\x56\xbb'
+    """
     return ''.join([chr(int( s[pos:pos+2], 16)) for pos in xrange(0,len(s),2)])
 
 encryptKeys = map(hex2str, (
@@ -381,17 +371,21 @@ hashSm = (
 )
 
 def getKeyDWORD(key, idx):
+    """ Get a DWORD from key table. """
     pos = idx*4
     return getDWORD(key[pos:pos+4])
 
 def getSmDWORD(tab, idx):
+    """ Get a DWORD from Sm table. """
     pos = ord(idx) * 4
     return getDWORD(hashSm[tab][pos:pos+4])
 
 def getKeyBYTE(key, idx):
+    """ Get a BYTE from key string """
     return key[ord(idx)]
 
 def DefEncryptBlock(inp):
+    """ Encrypt the 16 bytes of input string using EA's AES tables. """
     Ker = encryptKeys[0]
 
     t0 = xor(inp[0:4],   getKeyDWORD(Ker, 0))

@@ -2,20 +2,6 @@
 
 """ CRC16-CCITT hash, part of Battlefield 2142 Auth token maker
 This is the python module package for computing CRC16-CCITT hash.
-
-Copyright © 2006 Alexander Bondarenko <wiz@aenor.ru>
-
-Licence:
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
 """
 
 table = (
@@ -44,6 +30,7 @@ table = (
         )
 
 def compute(data):
+    """ Compute correct enough :grin: CRC16 CCITT for using in BF2142 auth token """
     crc = 0
     for byte in (ord(part) for part in data):
         ushort = (crc << 8) & 0xff00
