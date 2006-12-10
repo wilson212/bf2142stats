@@ -97,6 +97,7 @@ class RPC:
         return self.query.execute()
 
 class StatsWrapper:
+    """ Abstraction class, proxying functions to stat server's authenticated request. """
     def __init__(self, pid=0, *args, **kwargs):
         """ Init stat fetcher.
         Provide pid here or in functions.
@@ -144,8 +145,8 @@ class StatsWrapper:
     
     def player_info(self, mode):
         """ Gets player information.
-        mode (required) - the stats mode that takes one of the following parameters:
 
+        mode (required) - the stats mode that takes one of the following parameters:
           - base (requires pToken) - general statistics
           - ovr - overview stats
           - ply - player stats
@@ -174,28 +175,32 @@ class StatsWrapper:
             return self._format( data, **modes[mode])
 
     def get_leader_board(self, pos, after, mode, **kwargs):
-        """ Gets the BF2142 leaderboard information
-        Args:
-          - mode (required) - the general category in which to get the results. valid values for this are:
-            - weapon (requires id) - ranks players by weapon.
-                                   there are 43 some odd different types of weapons.
-                                   setting the id parameter to a value between 0 - 27
-                                   (though more may possibly be pulled... that hasn't been tested)
-                                   will return a result for that weapon. not all weapons kill.
-            - vehicle (requires id) - rank players based on a particular vehicle. the id parameter takes values 0 - 14
-            - overallscore - rank players based on overall score
-            - combatscore - rank players based on combat score
-            - commanderscore - rank players on commander score
-            - teamworkscore - rank players based on teamwork score
-            - efficiency - rank players based on efficiency
-            - risingstar - rank players based on the player who has progressed the most over some period of time?
-            - supremecommander - shows "hall of fame" board and will display whoever has
-                                 achieved the "supreme commander" rank
-          - id (required by vehicle & weapon) - specifies a weapon or vehicle type.
-          - ccFilter (optional) - filters result set by country (takes the 2 letter country code as its value)
-          - buddiesFilter (optional) - filters results based on a list of buddy PID's.
-                                   ex: buddiesFilter=(81168298, 81242994, 81306093, 81465904)
-          - dogTagFilter (optional) - filters the list to people you've knifed (set dogTagFilter=1 to enable this filter).
+        """ Gets the BF2142 leaderboard information.
+
+        Args
+        ====
+            - mode (required) - the general category in which to get the results. valid values for this are:
+                - weapon (requires id) - ranks players by weapon.
+                                         there are 43 some odd different types of weapons.
+                                         setting the id parameter to a value between 0 - 27
+                                         (though more may possibly be pulled... that hasn't been tested)
+                                         will return a result for that weapon. not all weapons kill.
+                - vehicle (requires id) - rank players based on a particular vehicle.
+                                          the id parameter takes values 0 - 14
+                - overallscore - rank players based on overall score
+                - combatscore - rank players based on combat score
+                - commanderscore - rank players on commander score
+                - teamworkscore - rank players based on teamwork score
+                - efficiency - rank players based on efficiency
+                - risingstar - rank players based on the player who has progressed the most over some period of time?
+                - supremecommander - shows "hall of fame" board and will display whoever has
+                                     achieved the "supreme commander" rank
+            - id (required by vehicle & weapon) - specifies a weapon or vehicle type.
+            - ccFilter (optional) - filters result set by country (takes the 2 letter country code as its value)
+            - buddiesFilter (optional) - filters results based on a list of buddy PID's.
+                                         ex: buddiesFilter=(81168298, 81242994, 81306093, 81465904)
+            - dogTagFilter (optional) - filters the list to people you've knifed
+                                        (set dogTagFilter=1 to enable this filter).
         """
         modes = self.leader_board_modes
         if mode not in modes:
@@ -207,8 +212,7 @@ class StatsWrapper:
             **modes[mode])
 
     def get_player_progress(self, mode, scale='game'):
-        """ Gets statistical progress data used to draw the graphs in game
-        """
+        """ Gets statistical progress data used to draw the graphs in game. """
         modes = self.player_progress_modes
         if mode not in modes:
             raise ValueError('Unknown mode: "%s"' % mode)
@@ -219,9 +223,10 @@ class StatsWrapper:
     def get_unlocks_info(self, pid=0):
         """ Gets a list of unlocked items.
 
-        first digit: Kit
-        second digit: Col of unlock tree 1 or 2
-        third digit: Order in unlock tree 1 to 4(highest)
+        Returns 3-digit string:
+          1. Kit
+          2. Col of unlock tree 1 or 2
+          3. Order in unlock tree 1 to 4(highest)
         """
         return self._format(
             self._rpc.make_query('getunlocksinfo', authpid=pid or self._rpc.pid),
@@ -229,6 +234,7 @@ class StatsWrapper:
 
     def player_search(self, nick):
         """ Finds a players based on their nick.
+
         Use '*' as wildcard.
         """
         return self._format(
@@ -236,8 +242,8 @@ class StatsWrapper:
             nick=str, pid=int)
 
     def __init_modes(self):
-        """ Precompile format dicts
-        because they are different for each mode, containg '-'ses and not normalised.
+        """ Precompile format dicts because they are different for each mode,
+        containg '-'ses and not normalised.
         """
         # those should be grabbed directly from the game
         WEAPONS = 43
