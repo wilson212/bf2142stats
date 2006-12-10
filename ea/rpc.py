@@ -100,9 +100,6 @@ class RPC:
     def getplayerprogress(self, mode, scale='game'):
         return self.make_query('getplayeprogress', mode=mode, scale=scale)
 
-    def getunlocksinfo(self, pid):
-        return self.make_query('getunlocksinfo', mode=mode, authpid=pid)
-
 class StatsWrapper:
     def __init__(self, *args, **kwargs):
         self._rpc = RPC(*args, **kwargs)
@@ -123,10 +120,10 @@ class StatsWrapper:
     def _timestamp(self, str):
         return datetime.fromtimestamp(int(str))
 
-    def get_awards(self, pid):
+    def get_awards(self, pid=0):
         return self._format(
-            self._rpc.make_query('getawardsinfo', pid=pid),
-            first=int, when=self._timestamp, award=str, level=int)
+            self._rpc.make_query('getawardsinfo', pid=pid or self._rpc.pid),
+            first=self._timestamp, when=self._timestamp, award=str, level=int)
 
     def get_backend_info(self):
         return self._format(
@@ -168,6 +165,11 @@ class StatsWrapper:
         return self._format(
             self._rpc.make_query('getleaderboard', mode=mode, scale=scale)
             **modes[mode])
+
+    def get_unlocks_info(self, pid=0):
+        return self._format(
+            self._rpc.make_query('getunlocksinfo', authpid=pid or self._rpc.pid),
+            UnlockID=str)
 
     def player_search(self, nick):
         return self._format(

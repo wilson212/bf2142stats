@@ -3,25 +3,31 @@ Hi there! This is a Python implementation of EA's Battlefield 2142 stats queries
 The easiest usage is create an instance of ea.rpc.StatsWrapper with (your) PID
 and call it's public functions.
 
-Fully implemented wrappers so far:
-  get_awards(pid)
-  get_backend_info()
-  player_search(nick)
-  player_info(mode)
-  def get_leader_board(self, pos, after, mode, **kwargs)
-
-Remaining queries can be done with ea.rpc.RPC class, yielding some [almost] raw
-data from response.
-
 If you wish, you can go deeper: use ea.auth.make_auth token generator and
 query servers by yourself.
 
 The ea.aes and ea.crc modules containing some tricky tables and functions to
 compute AES and CRC16-CCITT data, used in creation of auth token.
 
+Fully implemented wrappers
+==========================
+
+So far:
+  get_awards(pid)
+  get_backend_info()
+  player_search(nick)
+  player_info(mode)
+  get_leader_board(self, pos, after, mode, **kwargs)
+  make get_unlocks_info
+    
+Remaining
+=========
+
+get_unlocks_info is lacking mode table as i can't work it out because of
+"E 999 $ 4 $" response from server.
 
 Note of warning
----------------
+===============
                  PLEASE VERIFY YOUR DATA BEFORE FEEDING IT TO FUNCs!
   THERE ARE RISK OF BEING BANNED FOR INCORRECT OR UNPOLITE (ab)USAGE OF STATS.
 
@@ -32,5 +38,5 @@ Most recent information is (maybe) here:
   http://bf2tech.org/index.php/BF2142_Statistics
 
 Many thanks
-===========
+-----------
             to guys on that wiki and sanity-free.org forum!
